@@ -1,6 +1,12 @@
 # Use the official micromamba image as a base
 FROM docker.io/mambaorg/micromamba:1.5-jammy as base
 
+# Install required system packages including the C++ compiler
+USER root
+RUN apt update -y \
+    && apt-get install -y build-essential libssl-dev ca-certificates libasound2 wget g++ \
+    && apt-get clean
+
 # Create a new user '$MAMBA_USER' and set the working directory
 COPY --chown=$MAMBA_USER:$MAMBA_USER api/environment.docker.yml /tmp/environment.yml
 
@@ -8,33 +14,29 @@ COPY --chown=$MAMBA_USER:$MAMBA_USER api/environment.docker.yml /tmp/environment
 RUN micromamba install -y -n base -f /tmp/environment.yml && \
     micromamba clean --all --yes    
 
-USER root
-WORKDIR /usr/local/src
-
+# Create a new user for running the application
 ARG VOCODE_USER=vocode
 ARG VOCODE_UID=8476
 ARG VOCODE_GID=8476
 
-# Install the required system packages libssl1.1 to azure-cognitiveservices-speech
-RUN apt update -y \
-    && apt-get install -y build-essential libssl-dev ca-certificates libasound2 wget 
+RUN groupadd --gid $VOCODE_GID $VOCODE_USER && \
+    useradd --uid $VOCODE_UID --gid $VOCODE_GID --shell /bin/bash --create-home $VOCODE_USER
 
 # Manual Install the libssl1.1 package
-RUN wget -O - https://www.openssl.org/source/openssl-1.1.1w.tar.gz | tar zxf - && \
+USER root
+RUN mkdir /tmp/openssl_build && \
+    cd /tmp/openssl_build && \
+    wget -O openssl.tar.gz https://www.openssl.org/source/openssl-1.1.1w.tar.gz && \
+    tar zxf openssl.tar.gz && \
     cd openssl-1.1.1w && \
     ./config --prefix=/usr/local && \
     make -j $(nproc) && \
     make install_sw install_ssldirs && \
-    ldconfig -v
+    ldconfig -v && \
+    cd .. && rm -rf /tmp/openssl_build
 
-ENV SSL_CERT_DIR=/etc/ssl/certs
-
-RUN groupadd --gid $VOCODE_GID $VOCODE_USER && \
-    useradd --uid $VOCODE_UID --gid $VOCODE_GID --shell /bin/bash --create-home $VOCODE_USER
-
-
-FROM base AS builder
 # Copy the rest of your application files into the Docker image
+FROM base AS builder
 COPY --chown=$VOCODE_USER:$VOCODE_USER . /vocode
 WORKDIR /vocode
 
@@ -44,7 +46,6 @@ RUN PATH="/opt/conda/bin:${PATH}" npm run build
 
 FROM base AS runner
 WORKDIR /vocode
-#USER vocode
 USER root
 
 COPY --from=builder /vocode/public ./public
@@ -54,7 +55,7 @@ COPY --from=builder --chown=$VOCODE_USER:$VOCODE_USER /vocode/api ./api
 
 ENV DOCKER_ENV="docker"
 
-# # Expose the port your FastAPI app will run on
+# Expose the port your FastAPI app will run on
 EXPOSE 3000
 
 # Set build arguments
