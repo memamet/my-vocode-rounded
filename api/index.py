@@ -4,7 +4,7 @@ from fastapi import FastAPI, WebSocket
 import datetime
 import json
 
-from langchain import hub
+# from langchain import hub
 
 from vocode.streaming.models.agent import ChatGPTAgentConfig
 from vocode.streaming.models.synthesizer import AzureSynthesizerConfig
@@ -24,31 +24,35 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
-langsmith_system_prompt = os.getenv('LANGSMITH_SYSTEM_PROMPT')
-system_prompt = os.getenv('SYSTEM_PROMPT')
-INITIAL_MESSAGE = os.getenv('INITIAL_MESSAGE', "Hello!")
+langsmith_system_prompt = os.getenv("LANGSMITH_SYSTEM_PROMPT")
+system_prompt = os.getenv("SYSTEM_PROMPT")
+INITIAL_MESSAGE = os.getenv("INITIAL_MESSAGE", "Hello!")
 
 # Check if at least one of the environment variables is defined
 if langsmith_system_prompt is None and system_prompt is None:
-    raise ValueError("Either 'LANGSMITH_SYSTEM_PROMPT' or 'SYSTEM_PROMPT' must be defined in the environment.")
+    raise ValueError(
+        "Either 'LANGSMITH_SYSTEM_PROMPT' or 'SYSTEM_PROMPT' must be defined in the environment."
+    )
 
 # If both are defined, log a message indicating which one will be used
 if langsmith_system_prompt and system_prompt:
-    logger.info("Both 'LANGSMITH_SYSTEM_PROMPT' and 'SYSTEM_PROMPT' are defined. "
-                "'LANGSMITH_SYSTEM_PROMPT' will be used.")
+    logger.info(
+        "Both 'LANGSMITH_SYSTEM_PROMPT' and 'SYSTEM_PROMPT' are defined. "
+        "'LANGSMITH_SYSTEM_PROMPT' will be used."
+    )
+
 
 def get_system_prompt():
     """
     This function generates a dynamic SYSTEM_PROMPT with the current date.
     """
-    if langsmith_system_prompt:
-        # Retrieve the system message from langsmith and format it with the current date
-        req = hub.pull(langsmith_system_prompt)
-        return req.format_messages(
-            current_date=datetime.datetime.now().strftime("%Y-%m-%d"),
-            question=""
-        )[0].content
-    elif system_prompt:
+    # if langsmith_system_prompt:
+    #     # Retrieve the system message from langsmith and format it with the current date
+    #     req = hub.pull(langsmith_system_prompt)
+    #     return req.format_messages(
+    #         current_date=datetime.datetime.now().strftime("%Y-%m-%d"), question=""
+    #     )[0].content
+    if system_prompt:
         # Use the system message defined in the environment variable
         return system_prompt
     else:
@@ -61,6 +65,7 @@ conversation_router = ConversationRouter(
         ChatGPTAgentConfig(
             initial_message=BaseMessage(text=INITIAL_MESSAGE),
             prompt_preamble=get_system_prompt(),
+            model_name="gpt-4o-mini",
         )
     ),
     synthesizer_thunk=lambda output_audio_config: AzureSynthesizer(
@@ -68,11 +73,12 @@ conversation_router = ConversationRouter(
             output_audio_config, voice_name="en-US-SteffanNeural"
         )
     ),
-    logger=logger,
+    # logger=logger,
     conversation_endpoint="/api/python/conversation",
 )
 
 app.include_router(conversation_router.get_router())
+
 
 @app.websocket("/api/ping")
 async def websocket_endpoint(websocket: WebSocket):
@@ -89,11 +95,14 @@ async def websocket_endpoint(websocket: WebSocket):
             serverSendTime = datetime.datetime.now(datetime.timezone.utc).timestamp()
             # Send a JSON response containing the server receive time, server send time,
             # and the client send time received from the frontend
-            await websocket.send_json({
-                "serverReceiveTime": serverReceiveTime,
-                "serverSendTime": serverSendTime,
-                "clientSendTime": message.get("clientSendTime")
-            })
+            await websocket.send_json(
+                {
+                    "serverReceiveTime": serverReceiveTime,
+                    "serverSendTime": serverSendTime,
+                    "clientSendTime": message.get("clientSendTime"),
+                }
+            )
+
 
 @app.get("/api/ping")
 async def get_ping():
