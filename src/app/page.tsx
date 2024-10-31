@@ -5,12 +5,20 @@ export const runtime = "edge";
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
+import { useState } from "react";
+import { Switch } from "@/components/ui/switch";
 
 const VocodeAppDynamic = dynamic(() => import("@/components/vocode-app"), {
   ssr: false,
 });
 
 export default function Home() {
+  const [chatMode, setChatMode] = useState("voice"); // Default to voice mode
+
+  const toggleChatMode = () => {
+    setChatMode((prevMode) => (prevMode === "voice" ? "text" : "voice"));
+  };
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <div className="flex justify-end">
@@ -46,16 +54,34 @@ export default function Home() {
         Donny is here to help you learn everything about Rounded's journey,
         products, and innovations.
       </p>
-      <div className="flex flex-col items-center justify-center py-4">
-        <VocodeAppDynamic
-          defaultBackendUrl={
-            (window.location.protocol === "https:" ? "wss:" : "ws:") +
-            "//" +
-            window.location.host +
-            "/api/python/conversation"
-          }
-          isInputEditable={false}
+
+      <div className="flex flex-row items-center justify-between space-x-4 p-4 mb-4">
+        <Switch
+          checked={chatMode === "text"}
+          onCheckedChange={toggleChatMode}
         />
+        <div className="">
+          <span className="text-base">
+            {chatMode === "voice"
+              ? "Go to written chat mode"
+              : "Go back to voice mode"}
+          </span>
+        </div>
+      </div>
+
+      <div className="flex flex-col items-center justify-center py-4">
+        {chatMode === "text" && <div className="mb-4">Chat</div>}
+        {chatMode === "voice" && (
+          <VocodeAppDynamic
+            defaultBackendUrl={
+              (window.location.protocol === "https:" ? "wss:" : "ws:") +
+              "//" +
+              window.location.host +
+              "/api/python/conversation"
+            }
+            isInputEditable={false}
+          />
+        )}
       </div>
       <div className="grid text-center lg:max-w-5xl lg:w-full lg:grid-cols-4 lg:text-left gap-4">
         <div>
