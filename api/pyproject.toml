@@ -8,8 +8,8 @@ readme = "../README.md"
 package-mode = false
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
-vocode = "0.1.111"
+python = ">=3.10,<=3.12.4"
+vocode = "0.1.114a2"
 python-dotenv = "^1.0.1"
 
 [build-system]

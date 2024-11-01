@@ -1,9 +1,11 @@
 import os
 import logging
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI, WebSocket, Query
+from fastapi.responses import StreamingResponse
 import datetime
 import json
 
+from pydantic import BaseModel
 from vocode.streaming.models.synthesizer import AzureSynthesizerConfig
 from vocode.streaming.synthesizer.azure_synthesizer import AzureSynthesizer
 
@@ -13,11 +15,19 @@ from vocode.streaming.models.agent import ChatGPTAgentConfig
 from vocode.streaming.client_backend.conversation import ConversationRouter
 from vocode.streaming.models.message import BaseMessage
 
+from openai import OpenAI
+from utils.prompt import ClientMessage, convert_to_openai_messages
+
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = FastAPI(docs_url=None)
+
+client = OpenAI(
+    api_key=os.environ.get("OPENAI_API_KEY"),
+)
+
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
@@ -26,6 +36,10 @@ logger.setLevel(logging.DEBUG)
 langsmith_system_prompt = os.getenv("LANGSMITH_SYSTEM_PROMPT")
 system_prompt = os.getenv("SYSTEM_PROMPT")
 INITIAL_MESSAGE = os.getenv("INITIAL_MESSAGE", "Hello!")
+
+
+class Request(BaseModel):
+    messages: list[ClientMessage]
 
 
 def get_system_prompt():
@@ -55,6 +69,34 @@ voice_router = ConversationRouter(
 )
 
 app.include_router(voice_router.get_router())
+
+
+def stream_text(messages: list[ClientMessage], protocol: str = "data"):
+
+    messages.insert(0, {"role": "system", "content": get_system_prompt()})
+
+    stream = client.chat.completions.create(
+        messages=messages,
+        model="gpt-4o-mini",
+        stream=True,
+    )
+
+    for chunk in stream:
+        for choice in chunk.choices:
+            if choice.finish_reason == "stop":
+                break
+            else:
+                yield "{text}".format(text=choice.delta.content)
+
+
+@app.post("/api/chat")
+async def handle_chat_data(request: Request, protocol: str = Query("data")):
+    messages = request.messages
+    openai_messages = convert_to_openai_messages(messages)
+
+    response = StreamingResponse(stream_text(openai_messages, protocol))
+    response.headers["x-vercel-ai-data-stream"] = "v1"
+    return response
 
 
 @app.websocket("/api/ping")

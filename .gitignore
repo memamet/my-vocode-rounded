@@ -40,7 +40,8 @@ certificates
 .local/images
 
 # pyyhon
-api/__pycache__
+*.pyc
+*__pycache__
 api/.venv
 
 .env
