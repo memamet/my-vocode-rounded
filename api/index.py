@@ -4,13 +4,12 @@ from fastapi import FastAPI, WebSocket
 import datetime
 import json
 
-# from langchain import hub
-
-from vocode.streaming.models.agent import ChatGPTAgentConfig
 from vocode.streaming.models.synthesizer import AzureSynthesizerConfig
 from vocode.streaming.synthesizer.azure_synthesizer import AzureSynthesizer
 
 from vocode.streaming.agent.chat_gpt_agent import ChatGPTAgent
+from vocode.streaming.models.agent import ChatGPTAgentConfig
+
 from vocode.streaming.client_backend.conversation import ConversationRouter
 from vocode.streaming.models.message import BaseMessage
 
@@ -28,56 +27,34 @@ langsmith_system_prompt = os.getenv("LANGSMITH_SYSTEM_PROMPT")
 system_prompt = os.getenv("SYSTEM_PROMPT")
 INITIAL_MESSAGE = os.getenv("INITIAL_MESSAGE", "Hello!")
 
-# Check if at least one of the environment variables is defined
-if langsmith_system_prompt is None and system_prompt is None:
-    raise ValueError(
-        "Either 'LANGSMITH_SYSTEM_PROMPT' or 'SYSTEM_PROMPT' must be defined in the environment."
-    )
-
-# If both are defined, log a message indicating which one will be used
-if langsmith_system_prompt and system_prompt:
-    logger.info(
-        "Both 'LANGSMITH_SYSTEM_PROMPT' and 'SYSTEM_PROMPT' are defined. "
-        "'LANGSMITH_SYSTEM_PROMPT' will be used."
-    )
-
 
 def get_system_prompt():
-    """
-    This function generates a dynamic SYSTEM_PROMPT with the current date.
-    """
-    # if langsmith_system_prompt:
-    #     # Retrieve the system message from langsmith and format it with the current date
-    #     req = hub.pull(langsmith_system_prompt)
-    #     return req.format_messages(
-    #         current_date=datetime.datetime.now().strftime("%Y-%m-%d"), question=""
-    #     )[0].content
     if system_prompt:
-        # Use the system message defined in the environment variable
         return system_prompt
-    else:
-        # Default message if no environment variable is defined
-        return "Have a pleasant conversation about life"
+    return "Have a pleasant conversation about life"
 
 
-conversation_router = ConversationRouter(
-    agent_thunk=lambda: ChatGPTAgent(
+def get_chat_gpt_agent():
+    return ChatGPTAgent(
         ChatGPTAgentConfig(
             initial_message=BaseMessage(text=INITIAL_MESSAGE),
             prompt_preamble=get_system_prompt(),
             model_name="gpt-4o-mini",
         )
-    ),
+    )
+
+
+voice_router = ConversationRouter(
+    agent_thunk=get_chat_gpt_agent,
     synthesizer_thunk=lambda output_audio_config: AzureSynthesizer(
         AzureSynthesizerConfig.from_output_audio_config(
             output_audio_config, voice_name="en-US-SteffanNeural"
         )
     ),
-    # logger=logger,
     conversation_endpoint="/api/python/conversation",
 )
 
-app.include_router(conversation_router.get_router())
+app.include_router(voice_router.get_router())
 
 
 @app.websocket("/api/ping")
