@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
+import Chat from "@/components/chat";
 
 const VocodeAppDynamic = dynamic(() => import("@/components/vocode-app"), {
   ssr: false,
@@ -70,7 +71,11 @@ export default function Home() {
       </div>
 
       <div className="flex flex-col items-center justify-center py-4">
-        {chatMode === "text" && <div className="mb-4">Chat</div>}
+        {chatMode === "text" && (
+          <div className="mb-4">
+            <Chat />
+          </div>
+        )}
         {chatMode === "voice" && (
           <VocodeAppDynamic
             defaultBackendUrl={
