@@ -10,6 +10,7 @@ export async function POST(req: Request) {
   const result = await streamText({
     model: openai("gpt-4o-mini"),
     messages,
+    system: "talk only about Rounded " + process.env.SYSTEM_PROMPT,
   });
 
   return result.toDataStreamResponse();
