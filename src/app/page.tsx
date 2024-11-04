@@ -5,7 +5,7 @@ export const runtime = "edge";
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import Chat from "@/components/chat";
 
@@ -15,10 +15,18 @@ const VocodeAppDynamic = dynamic(() => import("@/components/vocode-app"), {
 
 export default function Home() {
   const [chatMode, setChatMode] = useState("voice");
+  const [defaultBackendUrl, setDefaultBackendUrl] = useState("");
 
   const toggleChatMode = () => {
     setChatMode((prevMode) => (prevMode === "voice" ? "text" : "voice"));
   };
+
+  useEffect(() => {
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const host = window.location.host;
+    const url = `${protocol}//${host}/api/python/conversation`;
+    setDefaultBackendUrl(url);
+  }, []);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
@@ -78,12 +86,7 @@ export default function Home() {
         )}
         {chatMode === "voice" && (
           <VocodeAppDynamic
-            defaultBackendUrl={
-              (window.location.protocol === "https:" ? "wss:" : "ws:") +
-              "//" +
-              window.location.host +
-              "/api/python/conversation"
-            }
+            defaultBackendUrl={defaultBackendUrl}
             isInputEditable={false}
           />
         )}
