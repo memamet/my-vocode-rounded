@@ -3,8 +3,9 @@
 import { useChat } from "ai/react";
 
 export default function Chat() {
+  const httpUrl = `${process.env.NEXT_PUBLIC_BACKEND_HTTP_PROTOCOL}://${process.env.NEXT_PUBLIC_BACKEND_HOST}`;
   const { messages, input, handleInputChange, handleSubmit } = useChat({
-    api: "/api/chat?protocol=text",
+    api: `${httpUrl}/api/chat`,
     streamProtocol: "text",
   });
 

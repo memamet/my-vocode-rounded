@@ -1,7 +1,7 @@
 import os
 import logging
 from fastapi import FastAPI, WebSocket, Query
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import datetime
@@ -28,9 +28,9 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "https://my-vocode-rounded.vercel.app/"],
+    allow_origins=["http://localhost:3000", "https://my-vocode-rounded.vercel.app"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 

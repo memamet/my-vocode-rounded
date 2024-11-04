@@ -22,9 +22,8 @@ export default function Home() {
   };
 
   useEffect(() => {
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const host = window.location.host;
-    const url = `${protocol}//${host}/api/python/conversation`;
+    const url = `${process.env.NEXT_PUBLIC_BACKEND_WS_PROTOCOL}://${process.env.NEXT_PUBLIC_BACKEND_HOST}/api/python/conversation`;
+    console.log(url);
     setDefaultBackendUrl(url);
   }, []);
 

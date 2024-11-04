@@ -23,8 +23,8 @@ COPY api/pyproject.toml api/poetry.lock ./
 RUN poetry config virtualenvs.create false && poetry install --no-dev
 
 # Copy the rest of the application code
-COPY /api .
+COPY api/ .
 
 # Use ENTRYPOINT to start the application
 # Use the environment variable PORT or default to 8000
-ENTRYPOINT ["poetry", "run", "uvicorn", "index:app", "--host", "0.0.0.0", "--port", "${PORT:-8000}"]
+CMD ["sh", "-c", "poetry run uvicorn index:app --host 0.0.0.0 --port ${PORT:-8000}"]
