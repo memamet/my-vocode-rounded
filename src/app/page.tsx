@@ -14,7 +14,7 @@ const VocodeAppDynamic = dynamic(() => import("@/components/vocode-app"), {
 });
 
 export default function Home() {
-  const [chatMode, setChatMode] = useState("voice"); // Default to voice mode
+  const [chatMode, setChatMode] = useState("voice");
 
   const toggleChatMode = () => {
     setChatMode((prevMode) => (prevMode === "voice" ? "text" : "voice"));
@@ -79,10 +79,7 @@ export default function Home() {
         {chatMode === "voice" && (
           <VocodeAppDynamic
             defaultBackendUrl={
-              (window.location.protocol === "https:" ? "wss:" : "ws:") +
-              "//" +
-              window.location.host +
-              "/api/python/conversation"
+              process.env.NEXT_PUBLIC_BACKEND_URL || "localhost:8000"
             }
             isInputEditable={false}
           />
