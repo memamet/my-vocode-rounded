@@ -26,4 +26,5 @@ RUN poetry config virtualenvs.create false && poetry install --no-dev
 COPY /api .
 
 # Use ENTRYPOINT to start the application
-ENTRYPOINT ["poetry", "run", "uvicorn", "index:app", "--host", "0.0.0.0", "--port", "8000"]
+# Use the environment variable PORT or default to 8000
+ENTRYPOINT ["poetry", "run", "uvicorn", "index:app", "--host", "0.0.0.0", "--port", "${PORT:-8000}"]
