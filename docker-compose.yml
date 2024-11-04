@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  backend:
+    image: my-vocode-rounded-backend
+    container_name: my-vocode-rounded-backend-container
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./api:/app
+    entrypoint:
+      [
+        "poetry",
+        "run",
+        "uvicorn",
+        "index:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+      ]

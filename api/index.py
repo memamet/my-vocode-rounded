@@ -22,7 +22,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-app = FastAPI(docs_url=None)
+app = FastAPI()
 
 client = OpenAI(
     api_key=os.environ.get("OPENAI_API_KEY"),
