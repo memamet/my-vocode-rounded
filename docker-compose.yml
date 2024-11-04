@@ -1,8 +1,31 @@
 version: "3.9"
 
 services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: my-vocode-rounded-frontend-container
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_BACKEND_URL=http://backend:8000
+      - NODE_ENV=production
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./.env:/app/.env
+      - ./next.config.js:/app/next.config.js
+    depends_on:
+      backend:
+        condition: service_started
+    networks:
+      - app-network
+
   backend:
-    image: my-vocode-rounded-backend
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
     container_name: my-vocode-rounded-backend-container
     ports:
       - "8000:8000"
@@ -20,4 +43,16 @@ services:
         "0.0.0.0",
         "--port",
         "8000",
+        "--reload",
       ]
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  app-network:
+    driver: bridge
