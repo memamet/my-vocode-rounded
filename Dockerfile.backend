@@ -1,17 +1,20 @@
-FROM python:3.12
+# Use the official slim Python image
+FROM python:3.12-slim
 
 # Set the working directory
 WORKDIR /app
 
 # Install necessary build tools for dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
-    python3-dev \
     gcc \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install Poetry
-RUN pip install poetry
+RUN pip install --no-cache-dir poetry
+
+# Ensure Poetry's bin directory is in PATH
+ENV PATH="/root/.local/bin:$PATH"
 
 # Copy only the Poetry dependency files first (for better caching)
 COPY api/pyproject.toml api/poetry.lock ./
