@@ -79,7 +79,10 @@ export default function Home() {
         {chatMode === "voice" && (
           <VocodeAppDynamic
             defaultBackendUrl={
-              process.env.NEXT_PUBLIC_BACKEND_URL || "localhost:8000"
+              (window.location.protocol === "https:" ? "wss:" : "ws:") +
+              "//" +
+              window.location.host +
+              "/api/python/conversation"
             }
             isInputEditable={false}
           />

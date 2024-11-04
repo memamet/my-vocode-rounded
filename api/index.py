@@ -3,6 +3,7 @@ import logging
 from fastapi import FastAPI, WebSocket, Query
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
+import uvicorn
 import datetime
 import json
 
@@ -139,3 +140,9 @@ async def get_ping():
     When a GET request is received, it returns a JSON response with a 'pong' message.
     """
     return {"message": "pong"}
+
+
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))  # Default to 8000 if PORT is not set
+    uvicorn.run(app, host="0.0.0.0", port=port)
